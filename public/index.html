@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adobe Stock Smart SEO Tool</title>
+  <style>
+    /* ==============================================
+    * SECTION: ROOT VARIABLES & GLOBAL STYLES
+    * Description: Defines the color palette and basic styles for the entire application.
+    * This setup allows for easy theme switching between dark and light modes.
+    ==============================================
+    */
+    :root {
+      --accent: #7c5cff;
+      --danger: #ff5d75;
+      --mint: #1ee5a1;
+      --success: #28a745;
+      --warning: #ffc107;
+      --dark-bg: #0b0f17;
+      --dark-bg-2: #1b2440;
+      --dark-card: #1b2430;
+      --dark-border: #334066;
+      --light-bg: #f6f8fa;
+      --light-card: #ffffff;
+      --light-border: #d7def5;
+      --light-text: #222;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      /* MODIFICATION: The original gradient is replaced by a solid color to allow the canvas animation to be visible. */
+      background-color: var(--dark-bg);
+      color: #fff;
+      transition: background .3s, color .3s;
+    }
+    
+    /* NEW: Styles for the background animation canvas */
+    #matrix-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1; /* Places the canvas behind all other content */
+        display: block;
+    }
+
+    body.light {
+      background: var(--light-bg);
+      color: var(--light-text);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 36px auto;
+      padding: 18px;
+      position: relative; /* Ensure container stays above the canvas */
+      z-index: 1;
+    }
+
+    /* ==============================================
+    * SECTION: HEADER & TOP BAR STYLES
+    * Description: Styles for the main header, including the brand logo, title, and action buttons.
+    ==============================================
+    */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--mint));
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, .45);
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(20px, 2.4vw, 28px);
+    }
+
+    .sub {
+      margin: 2px 0 0;
+      opacity: .75;
+      font-size: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--dark-border);
+      background: transparent;
+      color: inherit;
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
+      transition: all .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    body.light .btn {
+      border-color: var(--light-border);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: transparent;
+      color: #fff;
+    }
+    
+    .btn.danger {
+      background: var(--danger);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+      box-shadow: 0 10px 24px rgba(124, 92, 255, .35);
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    /* ==============================================
+    * SECTION: DROP ZONE & UPLOADER STYLES
+    * Description: Visual styles for the file drag-and-drop area.
+    ==============================================
+    */
+    .drop-zone {
+      padding: 44px;
+      border: 2px dashed var(--dark-border);
+      border-radius: 16px;
+      text-align: center;
+      background: rgba(18, 24, 38, .92);
+      transition: all .25s;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, .45);
+      cursor: pointer;
+    }
+
+    body.light .drop-zone {
+      background: var(--light-card);
+      border-color: var(--light-border);
+    }
+
+    .drop-zone:hover {
+      box-shadow: 0 0 0 3px rgba(124, 92, 255, .25) inset, 0 12px 30px rgba(0, 0, 0, .4);
+    }
+
+    .drop-zone.drag {
+      border-color: var(--accent);
+      background: #252f4a;
+      transform: translateY(-1px) scale(1.01);
+      box-shadow: 0 0 0 4px rgba(124, 92, 255, .25) inset;
+    }
+    
+    .chips {
+      margin-bottom: 12px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, .3);
+    }
+
+    .img { background: #1e90ff }
+    .vid { background: #ff4c4c }
+    .svg { background: #a64dff }
+    .vec { background: #00b894 }
+    .doc { background: #ffb703 }
+
+
+    .hint {
+      font-size: 12px;
+      opacity: .75;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .badge {
+      background: rgba(18, 24, 38, .85);
+      border: 1px solid var(--dark-border);
+      color: #c6d4ff;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    body.light .badge {
+      background: var(--light-card);
+      border-color: var(--light-border);
+      color: #556;
+    }
+
+    .progress {
+      height: 10px;
+      background: rgba(0, 0, 0, .2);
+      border: 1px solid var(--dark-border);
+      border-radius: 999px;
+      overflow: hidden;
+      min-width: 200px;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--mint));
+      transition: width .25s;
+    }
+
+    /* ==============================================
+    * SECTION: RESULTS LIST STYLES
+    * Description: Styles for each individual file item displayed after upload.
+    ==============================================
+    */
+    .results {
+      display: grid;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .result-item {
+      display: grid;
+      grid-template-columns: 96px 1fr auto;
+      gap: 16px;
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 14px;
+      padding: 12px;
+      align-items: center;
+    }
+
+    body.light .result-item {
+      background: var(--light-card);
+      border-color: var(--light-border);
+    }
+
+    .thumb {
+      width: 96px;
+      height: 96px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: var(--dark-bg);
+      border: 1px solid var(--dark-border);
+    }
+
+    .meta {
+      display: grid;
+      gap: 8px;
+    }
+
+    .meta h4 {
+      margin: 0;
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .fileinfo {
+      font-size: 12px;
+      opacity: .75;
+    }
+
+    .label {
+      font-size: 12px;
+      opacity: .75;
+      font-weight: 600;
+    }
+
+    .input,
+    .textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, .2);
+      border: 1px solid var(--dark-border);
+      color: inherit;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    body.light .input,
+    body.light .textarea {
+      border-color: var(--light-border);
+      background: rgba(0, 0, 0, .05);
+    }
+
+    .textarea {
+      min-height: 70px;
+      resize: vertical;
+    }
+
+    .item-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .pill {
+      width: 100%;
+      border: 1px solid var(--dark-border);
+      background: transparent;
+      color: inherit;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all .2s;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .pill:hover:not(:disabled) {
+      box-shadow: 0 0 0 3px rgba(124, 92, 255, .25);
+      transform: translateY(-1px);
+    }
+
+    .pill:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .status-badge {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: white;
+      font-weight: 700;
+      text-align: center;
+      width: 100%;
+    }
+
+    .status-pending { background-color: #888; }
+    .status-generating { background-color: var(--accent); }
+    .status-success { background-color: var(--success); }
+    .status-local { background-color: var(--warning); color: #111; }
+    .status-error { background-color: var(--danger); }
+
+    /* ==============================================
+    * SECTION: MODAL & NOTIFICATION STYLES
+    * Description: Styles for pop-up modals (Settings, Confirmation) and toast notifications.
+    ==============================================
+    */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, .7);
+      backdrop-filter: blur(5px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .3s, visibility .3s;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      padding: 24px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 550px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+      transform: scale(.95);
+      transition: transform .3s;
+    }
+
+    .modal-overlay.show .modal-content {
+      transform: scale(1);
+    }
+
+    body.light .modal-content {
+      background: var(--light-card);
+      border-color: var(--light-border);
+    }
+
+    .modal-content h2 {
+      margin: 0 0 8px 0;
+    }
+
+    .modal-content p {
+      margin: 0 0 24px 0;
+      opacity: .8;
+      font-size: 14px;
+    }
+    
+    .modal-content label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .form-group {
+      margin-top: 16px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    /* API Key Manager Specific Styles */
+    .api-key-add-form {
+      display: flex;
+      gap: 8px;
+    }
+    .api-key-add-form input {
+      flex-grow: 1;
+    }
+    .get-api-key-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .get-api-key-link:hover {
+      text-decoration: underline;
+    }
+
+    .stored-keys-header {
+      margin-top: 24px;
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .api-key-list {
+      min-height: 120px;
+      max-height: 240px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--dark-border);
+      border-radius: 8px;
+      padding: 8px;
+    }
+    
+    body.light .api-key-list {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .api-key-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
+    
+    .api-key-item:hover {
+      background-color: rgba(255,255,255,0.05);
+    }
+
+    .key-text {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+    }
+    
+    .key-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .key-actions svg {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    .key-actions svg:hover {
+      opacity: 1;
+    }
+    
+    .key-actions .status-icon {
+      color: var(--success);
+      cursor: default;
+    }
+    
+    .key-actions .delete-icon {
+      color: var(--danger);
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(150%);
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      z-index: 1001;
+      transition: transform 0.4s ease-in-out;
+    }
+    
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+    
+    .toast.error {
+      background: var(--danger);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix-canvas"></canvas>
+
+  <div class="container">
+    <header class="top-bar">
+      <div class="brand">
+        <div class="logo">✨</div>
+        <div>
+          <h1 class="title">Adobe Stock Smart SEO</h1>
+          <p class="sub">Pixel‑aware analysis → Adobe‑compliant title and 30–50 unique keywords.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="settingsBtn" class="btn">⚙ Settings</button>
+        <button id="themeBtn" class="btn">Theme: Dark</button>
+        <button id="genAllBtn" class="btn primary" disabled>Generate for All</button>
+        <button id="exportBtn" class="btn primary" disabled>Download CSV</button>
+        <button id="clearAllBtn" class="btn danger" disabled>Clear All Data</button>
+      </div>
+    </header>
+
+    <main>
+        <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Upload files (click or drop)">
+            <div class="chips">
+                <span class="chip img">Images</span>
+                <span class="chip vid">Videos</span>
+                <span class="chip svg">SVG</span>
+                <span class="chip vec">AI/EPS</span>
+                <span class="chip doc">PDF/PSD/INDD</span>
+            </div>
+            <p style="margin:6px 0 8px;font-weight:800">Drag & drop files here — or click to select</p>
+            <p class="hint">Accepted: JPG/PNG/WEBP/HEIC/AVIF • MP4/MOV • SVG/AI/EPS • PDF/PSD/INDD. Max 1000 files.</p>
+            <input id="fileInput" type="file" multiple hidden accept="image/*,video/*,.svg,.eps,.ai,.heic,.avif,.pdf,.psd,.indd" />
+            <div class="toolbar" style="margin-top:14px">
+                <span class="badge"><span id="fileCount">0</span>/1000 files</span>
+                <div class="progress"><div class="bar" id="globalProgressBar"></div></div>
+            </div>
+        </div>
+    </main>
+
+    <section class="results" id="resultsContainer"></section>
+  </div>
+
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <h2>Settings</h2>
+      <p>Manage your Gemini API keys and other generation preferences below.</p>
+      
+      <div class="form-group">
+        <label>Manage Gemini API Keys</label>
+        <div class="api-key-add-form">
+          <input id="newApiKeyInput" type="password" class="input" placeholder="Enter new Gemini API key">
+          <button id="addApiKeyBtn" class="btn primary">Add Key</button>
+        </div>
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="get-api-key-link">↗ Get Gemini API Key</a>
+      </div>
+      
+      <h3 class="stored-keys-header" id="storedKeysHeader">Stored API Keys: (0 keys added)</h3>
+      <div class="api-key-list" id="apiKeyList"></div>
+      
+      <div class="form-row form-group">
+        <div style="width:100%">
+            <label for="modelSelect">Model</label>
+            <select id="modelSelect" class="input"></select>
+        </div>
+        <div style="width:100%">
+            <label for="languageSelect">Language</label>
+            <select id="languageSelect" class="input"></select>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button id="cancelSettingsBtn" class="btn">Cancel</button>
+        <button id="saveSettingsBtn" class="btn primary">Save Settings</button>
+      </div>
+    </div>
+  </div>
+ 
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-content">
+      <h2 id="confirmTitle">Are you sure?</h2>
+      <p id="confirmText">This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="cancelConfirmBtn" class="btn">Cancel</button>
+        <button id="confirmActionBtn" class="btn danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+ 
+  <div id="toast" class="toast"></div>
+
+  <script>
+    /**
+     * ==============================================
+     * Adobe Stock Smart SEO Tool - Main Script
+     * Version: 11.0 (Robust API Key Rotation)
+     * Author: Gemini
+     * ==============================================
+     */
+
+    // --- SECTION 1: UTILITY FUNCTIONS ---
+    function $(selector) { return document.querySelector(selector); }
+    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    // --- SECTION 2: SVG ICONS ---
+    const ICONS = {
+      STATUS_OK: `<svg class="status-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path></svg>`,
+      VIEW: `<svg class="view-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path></svg>`,
+      DELETE: `<svg class="delete-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>`,
+    };
+
+    // --- SECTION 3: APPLICATION CONFIGURATION ---
+    const CONFIG = {
+        MAX_FILES: 1000,
+        SUPPORTED_MIME_TYPES: ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'],
+        API_BASE_URL: 'https://generativelanguage.googleapis.com/v1beta/models/',
+        GENERATION_DELAY_MS: 1500,
+        STORAGE_KEYS: {
+            API_KEYS: 'geminiApiKeys_v4_advanced',
+            MODEL: 'geminiModel_v2',
+            LANGUAGE: 'geminiLanguage_v2',
+            THEME: 'theme_v2'
+        },
+        MODELS: {
+            "gemini-1.5-pro-latest": "Gemini 1.5 Pro (Best)",
+            "gemini-1.5-flash-latest": "Gemini 1.5 Flash (Fastest)",
+        },
+        LANGUAGES: ["English", "Bengali", "Spanish", "French", "German", "Japanese", "Portuguese", "Russian", "Hindi", "Chinese"]
+    };
+
+    // --- SECTION 4: APPLICATION STATE ---
+    const state = { files: [], processingAll: false, confirmCallback: null };
+
+    // --- SECTION 5: DOM ELEMENT REFERENCES ---
+    const DOM = {
+        dropZone: $('#dropZone'), fileInput: $('#fileInput'), resultsContainer: $('#resultsContainer'),
+        genAllBtn: $('#genAllBtn'), exportBtn: $('#exportBtn'), clearAllBtn: $('#clearAllBtn'),
+        themeBtn: $('#themeBtn'), settingsBtn: $('#settingsBtn'), settingsModal: $('#settingsModal'),
+        newApiKeyInput: $('#newApiKeyInput'), addApiKeyBtn: $('#addApiKeyBtn'), apiKeyList: $('#apiKeyList'),
+        storedKeysHeader: $('#storedKeysHeader'), cancelSettingsBtn: $('#cancelSettingsBtn'), 
+        saveSettingsBtn: $('#saveSettingsBtn'), modelSelect: $('#modelSelect'), languageSelect: $('#languageSelect'),
+        toast: $('#toast'), confirmModal: $('#confirmModal'), confirmTitle: $('#confirmTitle'),
+        confirmText: $('#confirmText'), confirmActionBtn: $('#confirmActionBtn'), cancelConfirmBtn: $('#cancelConfirmBtn'),
+        fileCount: $('#fileCount'), globalProgressBar: $('#globalProgressBar'),
+    };
+
+    // --- SECTION 6: API KEY MANAGER ---
+    const ApiKeyManager = {
+        keys: [], currentIndex: 0,
+        load() {
+            try {
+                const stored = localStorage.getItem(CONFIG.STORAGE_KEYS.API_KEYS);
+                this.keys = stored ? JSON.parse(stored) : [];
+                if (!Array.isArray(this.keys) || (this.keys.length > 0 && typeof this.keys[0] !== 'object')) { this.keys = []; }
+                this.currentIndex = 0;
+            } catch (e) { this.keys = []; }
+        },
+        save() { localStorage.setItem(CONFIG.STORAGE_KEYS.API_KEYS, JSON.stringify(this.keys)); },
+        addKey(keyString) {
+            if (!keyString || !keyString.trim().startsWith('AIza')) { showToast("Invalid API key format.", true); return false; }
+            if (this.keys.some(k => k.key === keyString)) { showToast("This API key has already been added.", true); return false; }
+            const newKey = { id: `key_${Date.now()}_${Math.random()}`, key: keyString, status: 'ok' };
+            this.keys.push(newKey); this.save(); renderKeyList(); showToast("API Key added successfully."); return true;
+        },
+        deleteKey(id) { this.keys = this.keys.filter(k => k.id !== id); this.save(); renderKeyList(); showToast("API Key removed."); },
+        getNextKey() {
+            if (!this.hasKeys()) return null;
+            const key = this.keys[this.currentIndex];
+            this.currentIndex = (this.currentIndex + 1) % this.keys.length;
+            return key.key;
+        },
+        hasKeys() { return this.keys.length > 0; },
+    };
+
+    // --- SECTION 7: UI FEEDBACK & MODALS ---
+    function showToast(message, isError = false) {
+        DOM.toast.textContent = message;
+        DOM.toast.className = `toast show ${isError ? 'error' : ''}`;
+        setTimeout(() => DOM.toast.classList.remove('show'), 3000);
+    }
+    function showConfirmModal(title, text, onConfirm) {
+        DOM.confirmTitle.textContent = title; DOM.confirmText.textContent = text;
+        state.confirmCallback = onConfirm; DOM.confirmModal.classList.add('show');
+    }
+    function hideConfirmModal() { DOM.confirmModal.classList.remove('show'); state.confirmCallback = null; }
+    
+    // --- SECTION 8: UI RENDERING & MANAGEMENT ---
+    function renderKeyList() {
+        DOM.apiKeyList.innerHTML = '';
+        DOM.storedKeysHeader.textContent = `Stored API Keys: (${ApiKeyManager.keys.length} key${ApiKeyManager.keys.length !== 1 ? 's' : ''} added)`;
+        if (ApiKeyManager.keys.length === 0) {
+            DOM.apiKeyList.innerHTML = `<p style="text-align:center; opacity:0.6; margin-top: 20px;">No API keys stored. Add one above.</p>`; return;
+        }
+        ApiKeyManager.keys.forEach(keyObj => {
+            const item = document.createElement('div'); item.className = 'api-key-item'; item.dataset.id = keyObj.id;
+            const keyText = document.createElement('span'); keyText.className = 'key-text';
+            const obfuscatedKey = `${keyObj.key.slice(0, 4)}...${keyObj.key.slice(-4)}`;
+            keyText.textContent = obfuscatedKey;
+            const actions = document.createElement('div'); actions.className = 'key-actions'; actions.innerHTML = `${ICONS.STATUS_OK}${ICONS.VIEW}${ICONS.DELETE}`;
+            actions.querySelector('.view-icon').addEventListener('click', (e) => { e.stopPropagation(); keyText.textContent = keyText.textContent === obfuscatedKey ? keyObj.key : obfuscatedKey; });
+            actions.querySelector('.delete-icon').addEventListener('click', (e) => { e.stopPropagation(); showConfirmModal('Delete API Key?', `Are you sure you want to delete the key ending in ...${keyObj.key.slice(-4)}?`, () => { ApiKeyManager.deleteKey(keyObj.id); hideConfirmModal(); }); });
+            item.append(keyText, actions); DOM.apiKeyList.appendChild(item);
+        });
+    }
+
+    function updateItemUI(item) {
+        if (!item || !item.refs) return;
+        const { refs, status, title, keywords } = item;
+        refs.titleInput.value = title; refs.keywordsInput.value = keywords.join(', ');
+        refs.statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        refs.statusBadge.className = `status-badge status-${status}`;
+        refs.generateBtn.disabled = (status === 'generating');
+        const hasData = status === 'success' || status === 'local';
+        refs.copyTitleBtn.disabled = !hasData; refs.copyKeywordsBtn.disabled = !hasData;
+    }
+
+    function syncToolbar() {
+      DOM.fileCount.textContent = state.files.length; const hasFiles = state.files.length > 0;
+      const isProcessing = state.processingAll;
+      DOM.clearAllBtn.disabled = !hasFiles || isProcessing; DOM.genAllBtn.disabled = !hasFiles || isProcessing;
+      const allDone = hasFiles && state.files.every(f => f.status !== 'pending' && f.status !== 'generating');
+      DOM.exportBtn.disabled = !allDone || isProcessing;
+    }
+
+    // --- SECTION 9: SETTINGS & THEME ---
+    function setTheme(mode) {
+      document.body.classList.toggle('light', mode === 'light');
+      DOM.themeBtn.textContent = `Theme: ${mode === 'light' ? 'Light' : 'Dark'}`;
+      localStorage.setItem(CONFIG.STORAGE_KEYS.THEME, mode);
+    }
+    function populateDropdowns() {
+        DOM.modelSelect.innerHTML = Object.entries(CONFIG.MODELS).map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+        DOM.languageSelect.innerHTML = CONFIG.LANGUAGES.map(lang => `<option value="${lang}">${lang}</option>`).join('');
+    }
+    function loadAllSettings() {
+        setTheme(localStorage.getItem(CONFIG.STORAGE_KEYS.THEME) || 'dark');
+        ApiKeyManager.load();
+        DOM.modelSelect.value = localStorage.getItem(CONFIG.STORAGE_KEYS.MODEL) || 'gemini-1.5-flash-latest';
+        DOM.languageSelect.value = localStorage.getItem(CONFIG.STORAGE_KEYS.LANGUAGE) || 'English';
+    }
+    function saveOtherSettings() {
+        localStorage.setItem(CONFIG.STORAGE_KEYS.MODEL, DOM.modelSelect.value);
+        localStorage.setItem(CONFIG.STORAGE_KEYS.LANGUAGE, DOM.languageSelect.value);
+    }
+
+    // --- SECTION 10: FILE HANDLING & RENDERING ---
+    function handleFiles(files) {
+        try {
+            const accepted = Array.from(files).slice(0, CONFIG.MAX_FILES - state.files.length); if (accepted.length === 0) return;
+            for (const file of accepted) {
+                const id = `file-${Date.now()}-${Math.random().toString(36).slice(2)}`; const url = URL.createObjectURL(file);
+                const record = { id, file, url, title: '', keywords: [], status: 'pending', refs: {} };
+                state.files.push(record); renderItem(record);
+            }
+            syncToolbar(); showToast(`${accepted.length} file(s) added.`);
+        } catch (error) { console.error("Error handling files:", error); showToast("An error occurred while adding files.", true); }
+    }
+    function copyToClipboard(text) {
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!')).catch(err => { console.error('Failed to copy text: ', err); showToast('Could not copy text.', true); });
+    }
+    function renderItem(item) {
+        const wrap = document.createElement('div'); wrap.className = 'result-item'; wrap.id = item.id;
+        const thumb = document.createElement('img'); thumb.src = item.url; thumb.alt = `Preview of ${item.file.name}`; thumb.className = 'thumb';
+        thumb.onerror = () => { thumb.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 24 24' fill='none' stroke='%23334066' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48'/%3E%3C/svg%3E"; };
+        const metaHTML = `<h4>${item.file.name}</h4><div class="fileinfo">${item.file.type || 'unknown'} • ${(item.file.size / 1024 / 1024).toFixed(2)} MB</div><div class="label">Title</div><input class="input title-input" maxLength="150" placeholder="Will be auto-generated..."><div class="label">Keywords</div><textarea class="textarea keywords-input" placeholder="Will be auto-generated..."></textarea>`;
+        const meta = document.createElement('div'); meta.className = 'meta'; meta.innerHTML = metaHTML;
+        const actionsHTML = `<div class="status-badge status-pending">Pending</div><button class="pill primary generate-one-btn">Generate</button><button class="pill copy-title-btn" disabled>Copy Title</button><button class="pill copy-keywords-btn" disabled>Copy Keywords</button><button class="pill danger remove-btn">Remove</button>`;
+        const actions = document.createElement('div'); actions.className = 'item-actions'; actions.innerHTML = actionsHTML;
+        wrap.append(thumb, meta, actions); DOM.resultsContainer.appendChild(wrap);
+        item.refs = {
+            titleInput: wrap.querySelector('.title-input'), keywordsInput: wrap.querySelector('.keywords-input'), statusBadge: wrap.querySelector('.status-badge'),
+            generateBtn: wrap.querySelector('.generate-one-btn'), copyTitleBtn: wrap.querySelector('.copy-title-btn'), copyKeywordsBtn: wrap.querySelector('.copy-keywords-btn'),
+        };
+        item.refs.generateBtn.addEventListener('click', () => generateOne(item));
+        wrap.querySelector('.remove-btn').addEventListener('click', () => removeItem(item.id));
+        item.refs.copyTitleBtn.addEventListener('click', () => copyToClipboard(item.title));
+        item.refs.copyKeywordsBtn.addEventListener('click', () => copyToClipboard(item.keywords.join(', ')));
+        item.refs.titleInput.addEventListener('input', (e) => item.title = e.target.value);
+        item.refs.keywordsInput.addEventListener('input', (e) => item.keywords = e.target.value.split(',').map(k => k.trim()));
+    }
+    function removeItem(id) {
+        const itemIndex = state.files.findIndex(f => f.id === id);
+        if (itemIndex > -1) { URL.revokeObjectURL(state.files[itemIndex].url); state.files.splice(itemIndex, 1); const el = document.getElementById(id); if (el) el.remove(); syncToolbar(); }
+    }
+    
+    // --- SECTION 11: CORE API & GENERATION LOGIC ---
+    function generateLocalMetadata(file) {
+        const baseTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[\_\-]/g, ' ').replace(/\b\d+\b/g, '').replace(/\s{2,}/g, ' ').trim() || 'vector art';
+        const keywords = [baseTitle, 'vector', 'illustration', 'design', 'graphic', 'art', 'isolated', 'background', 'symbol', 'icon', 'clipart', 'drawing', 'flat', 'modern', 'sign', 'element', 'creative', 'concept'];
+        const uniqueKeywords = [...new Set(keywords.map(k => k.toLowerCase()))];
+        return { title: baseTitle.slice(0, 150), keywords: uniqueKeywords.slice(0, 50) };
+    }
+    
+    // MODIFIED AND IMPROVED generateOne FUNCTION
+    async function generateOne(item) {
+        // Step 1: Check if API can be used. If not, use local generation.
+        const canUseApi = ApiKeyManager.hasKeys() && CONFIG.SUPPORTED_MIME_TYPES.includes(item.file.type);
+        if (!canUseApi) {
+            item.status = 'generating'; 
+            updateItemUI(item); 
+            await delay(500);
+            const localMeta = generateLocalMetadata(item.file); 
+            item.title = localMeta.title; 
+            item.keywords = localMeta.keywords;
+            item.status = 'local'; 
+            updateItemUI(item); 
+            syncToolbar();
+            if (!ApiKeyManager.hasKeys()) {
+                showToast("No API key found. Using basic local analysis.", true);
+            }
+            return;
+        }
+
+        // Step 2: If API can be used, start the generation process.
+        item.status = 'generating';
+        updateItemUI(item);
+        syncToolbar();
+
+        const allKeys = [...ApiKeyManager.keys]; // Get a copy of all keys
+        let hasSucceeded = false;
+
+        // Step 3: Loop through each available key until one succeeds.
+        for (const keyObj of allKeys) {
+            const apiKey = keyObj.key;
+            try {
+                const base64Data = await fileToBase64(item.file);
+                const model = localStorage.getItem(CONFIG.STORAGE_KEYS.MODEL);
+                const language = localStorage.getItem(CONFIG.STORAGE_KEYS.LANGUAGE);
+                const API_URL = `${CONFIG.API_BASE_URL}${model}:generateContent?key=${apiKey}`;
+                
+                const prompt = `As an expert photo analyst for a stock photography platform like Adobe Stock, your task is to generate commercially relevant metadata for the provided image. Your analysis must be based **strictly and exclusively** on the visual content of the image. Do not infer or invent elements that are not explicitly visible.\n\nThe output must be in the ${language} language and must be a single, valid JSON object with no other text or explanation. The JSON object must have the following structure:\n{\n  "title": "A concise, descriptive, and commercially appealing title for this image. Maximum 150 characters. Focus on the primary subject and action.",\n  "keywords": [\n    "An array of 40 to 50 highly relevant and unique keywords. Keywords must be ordered by importance, from the most specific to the most general. Include specific objects, themes, concepts (like 'business', 'nature', 'technology'), actions, colors, and the overall mood. **Do not repeat keywords**. Ensure all keywords are unique."\n  ]\n}`;
+                
+                const payload = { contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: item.file.type, data: base64Data } }] }] };
+                
+                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result?.error?.message || `API Error: ${response.status}`);
+                }
+
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) {
+                     throw new Error(result.promptFeedback?.blockReason ? `Request blocked: ${result.promptFeedback.blockReason}` : 'No text received from API.');
+                }
+
+                const match = text.match(/\{[\s\S]*\}/);
+                if (!match) {
+                    throw new Error('No valid JSON object found in API response.');
+                }
+
+                const parsed = JSON.parse(match[0]);
+                if (parsed.title && Array.isArray(parsed.keywords)) {
+                    item.title = parsed.title;
+                    const rawKeywords = parsed.keywords.map(k => String(k).trim()).filter(Boolean);
+                    item.keywords = [...new Set(rawKeywords)];
+                    item.status = 'success';
+                    hasSucceeded = true; 
+                    break; // Exit the loop on success
+                } else {
+                    throw new Error('Invalid JSON structure from API.');
+                }
+
+            } catch (error) {
+                console.error(`Attempt with key ending in ...${apiKey.slice(-4)} failed:`, error);
+                // This key failed, the loop will continue to the next one.
+            }
+        }
+
+        // Step 4: After the loop, check if any key was successful.
+        if (!hasSucceeded) {
+            item.status = 'error';
+            if (item.refs?.titleInput) {
+                item.refs.titleInput.value = 'Error: All available API keys failed.';
+            }
+        }
+        
+        updateItemUI(item);
+        syncToolbar();
+    }
+    
+    async function generateAll() {
+        if (state.processingAll) return; state.processingAll = true; syncToolbar();
+        const pendingFiles = state.files.filter(f => f.status === 'pending');
+        const totalCount = pendingFiles.length;
+        if (totalCount === 0) { showToast("No new files to process."); state.processingAll = false; syncToolbar(); return; }
+        let processedCount = 0; DOM.globalProgressBar.style.width = '0%';
+        for (const item of pendingFiles) {
+            await generateOne(item); processedCount++;
+            DOM.globalProgressBar.style.width = `${(processedCount / totalCount) * 100}%`;
+            if (processedCount < totalCount) await delay(CONFIG.GENERATION_DELAY_MS);
+        }
+        state.processingAll = false; syncToolbar();
+        setTimeout(() => { DOM.globalProgressBar.style.width = '0%'; }, 1500);
+        showToast('All files have been processed!');
+    }
+    function downloadCSV() {
+        const successfulFiles = state.files.filter(it => it.status === 'success' || it.status === 'local');
+        if (successfulFiles.length === 0) { showToast("No successful data to download.", true); return; }
+        const header = ["filename", "title", "keywords"];
+        const rows = successfulFiles.map(item => [item.file.name, item.title, item.keywords.join(', ')]);
+        const escapeCSV = (v) => v == null ? '' : `"${String(v).replace(/"/g, '""')}"`;
+        const csvContent = [header.join(','), ...rows.map(row => row.map(escapeCSV).join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob);
+        const link = document.createElement('a'); link.href = url; link.download = 'adobe-stock-metadata.csv';
+        document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+    }
+    function clearAll() {
+        showConfirmModal('Clear All Files?', 'This will remove all uploaded files and data. This action cannot be undone.', () => {
+            state.files.forEach(item => URL.revokeObjectURL(item.url)); state.files = [];
+            DOM.resultsContainer.innerHTML = ''; syncToolbar(); showToast("All files have been cleared."); hideConfirmModal();
+        });
+    }
+
+    // --- FINALIZED ANIMATION LOGIC ---
+    function setupMatrixAnimation() {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) { console.error("Animation canvas not found!"); return; }
+        const ctx = canvas.getContext('2d');
+
+        const setCanvasDimensions = () => {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        };
+        setCanvasDimensions();
+
+        const characters = "012$";
+        const fontSize = 16;
+        let columns = Math.floor(canvas.width / fontSize);
+
+        const lightThemeColors = ['#7c5cff', '#ff5d75', '#1ee5a1', '#1e90ff', '#ffb703', '#a64dff'];
+        
+        const drops = [];
+        for (let x = 0; x < columns; x++) {
+            drops[x] = {
+                y: 1, // Start all drops at the top of the screen
+                color: lightThemeColors[Math.floor(Math.random() * lightThemeColors.length)]
+            };
+        }
+
+        function draw() {
+            const isLightTheme = document.body.classList.contains('light');
+            // Draw a semi-transparent rectangle on top of the old frame to create a fading trail effect.
+            ctx.fillStyle = isLightTheme ? "rgba(246, 248, 250, 0.1)" : "rgba(11, 15, 23, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = `${fontSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const drop = drops[i];
+                const text = characters.charAt(Math.floor(Math.random() * characters.length));
+
+                // Set character color based on theme
+                if (isLightTheme) {
+                    ctx.fillStyle = drop.color; // Use pre-assigned color for light theme
+                } else {
+                    ctx.fillStyle = "#00BFFF"; // Use original blue for dark theme
+                }
+
+                // Draw the character at its current x, y position.
+                ctx.fillText(text, i * fontSize, drop.y * fontSize);
+                
+                // When a drop reaches the bottom, reset it to the top with a random chance.
+                // This creates the classic, staggered "matrix rain" effect.
+                if (drop.y * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i].y = 0; // Reset to the top.
+                }
+
+                // Move the drop down for the next frame.
+                drops[i].y++;
+            }
+        }
+
+        const animationInterval = setInterval(draw, 50);
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            setCanvasDimensions();
+            columns = Math.floor(canvas.width / fontSize);
+            drops.length = 0; // Clear and re-initialize the drops array
+            for (let x = 0; x < columns; x++) {
+                drops[x] = {
+                    y: 1,
+                    color: lightThemeColors[Math.floor(Math.random() * lightThemeColors.length)]
+                };
+            }
+        });
+    }
+   
+    // --- SECTION 12: INITIALIZATION ---
+    function initialize() {
+        try {
+            // Setup UI components
+            populateDropdowns();
+            loadAllSettings();
+            syncToolbar();
+            
+            // NEW: Start the background animation
+            setupMatrixAnimation();
+
+            // Attach all necessary event listeners
+            
+            // Settings Modal Listeners
+            DOM.settingsBtn.addEventListener('click', () => {
+                // MODIFIED: Load current saved settings into view each time modal is opened
+                DOM.modelSelect.value = localStorage.getItem(CONFIG.STORAGE_KEYS.MODEL) || 'gemini-1.5-flash-latest';
+                DOM.languageSelect.value = localStorage.getItem(CONFIG.STORAGE_KEYS.LANGUAGE) || 'English';
+                renderKeyList();
+                DOM.settingsModal.classList.add('show');
+            });
+            DOM.addApiKeyBtn.addEventListener('click', () => {
+                if(ApiKeyManager.addKey(DOM.newApiKeyInput.value.trim())) {
+                    DOM.newApiKeyInput.value = '';
+                }
+            });
+            DOM.newApiKeyInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    DOM.addApiKeyBtn.click();
+                }
+            });
+
+            // MODIFIED: New logic for Save/Cancel buttons in settings
+            DOM.cancelSettingsBtn.addEventListener('click', () => {
+                DOM.settingsModal.classList.remove('show');
+            });
+            DOM.saveSettingsBtn.addEventListener('click', () => {
+                saveOtherSettings();
+                showToast("Settings saved successfully!");
+                DOM.settingsModal.classList.remove('show');
+            });
+            
+            // Main Action Listeners
+            DOM.themeBtn.addEventListener('click', () => setTheme(document.body.classList.contains('light') ? 'dark' : 'light'));
+            DOM.dropZone.addEventListener('click', () => DOM.fileInput.click());
+            DOM.fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+            DOM.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); DOM.dropZone.classList.add('drag'); });
+            DOM.dropZone.addEventListener('dragleave', () => DOM.dropZone.classList.remove('drag'));
+            DOM.dropZone.addEventListener('drop', (e) => { e.preventDefault(); DOM.dropZone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+            
+            // Toolbar Button Listeners
+            DOM.genAllBtn.addEventListener('click', generateAll);
+            DOM.exportBtn.addEventListener('click', downloadCSV);
+            DOM.clearAllBtn.addEventListener('click', clearAll);
+
+            // Confirmation Modal Listeners
+            DOM.confirmActionBtn.addEventListener('click', () => {
+                if (typeof state.confirmCallback === 'function') state.confirmCallback();
+            });
+            DOM.cancelConfirmBtn.addEventListener('click', hideConfirmModal);
+
+            console.log("Adobe Stock Smart SEO Tool Initialized Successfully.");
+        } catch (error) {
+            console.error("Initialization Failed:", error);
+            alert("The application could not be started. Please check the console for errors.");
+        }
+    }
+
+    // Start the application once the DOM is fully loaded.
+    document.addEventListener('DOMContentLoaded', initialize);
+
+  </script>
+</body>
+</html>

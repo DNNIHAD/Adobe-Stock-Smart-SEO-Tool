@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>PBKDF2 Generator (Client-side)</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:24px;max-width:800px}
+  label{display:block;margin:12px 0 6px;font-weight:700}
+  input,button,textarea{font:inherit;padding:10px;border-radius:8px;border:1px solid #ccc;width:100%}
+  button{cursor:pointer;font-weight:800}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  code{background:#f4f4f4;border-radius:6px;padding:2px 6px}
+</style>
+<h1>Generate PASS_SALT_B64 + PASS_DERIVED_B64</h1>
+<p>This runs completely in your browser using WebCrypto.</p>
+<label>New Password</label>
+<input id="pwd" type="password" placeholder="Type your new password">
+<div class="row">
+  <div>
+    <label>Iterations</label>
+    <input id="iter" type="number" value="150000">
+  </div>
+  <div>
+    <label>Salt (base64url, leave empty to auto-generate)</label>
+    <input id="salt">
+  </div>
+</div>
+<button id="go">Generate</button>
+<label>PASS_SALT_B64</label>
+<input id="outSalt" readonly>
+<label>PASS_DERIVED_B64</label>
+<textarea id="outDer" rows="3" readonly></textarea>
+<script>
+const enc=new TextEncoder();
+const b64u = (u8)=>{let b="";u8.forEach(x=>b+=String.fromCharCode(x));return btoa(b).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");};
+const deB64u=(s)=>{let x=s.replace(/-/g,"+").replace(/_/g,"/");while(x.length%4)x+="=";const bin=atob(x);const out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out;};
+async function gen(){
+  const pwd=document.getElementById('pwd').value;
+  const iter=parseInt(document.getElementById('iter').value||"150000",10);
+  let salt=document.getElementById('salt').value.trim();
+  if(!pwd){alert("Enter a password");return;}
+  let saltBytes;
+  if(salt){ saltBytes = deB64u(salt); }
+  else { saltBytes = crypto.getRandomValues(new Uint8Array(16)); salt = b64u(saltBytes); }
+  const keyMat=await crypto.subtle.importKey("raw",enc.encode(pwd),{name:"PBKDF2"},false,["deriveBits"]);
+  const bits=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:saltBytes,iterations:iter},keyMat,256);
+  document.getElementById('outSalt').value = salt;
+  document.getElementById('outDer').value  = b64u(new Uint8Array(bits));
+}
+document.getElementById('go').addEventListener('click', gen);
+</script>

@@ -1,0 +1,20 @@
+# Cloudflare Workers config
+name = "smart-seo-auth"
+main = "src/worker.js"
+compatibility_date = "2025-08-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+# (Optional) If you prefer, set account_id here for local/CI runs
+# account_id = "YOUR_ACCOUNT_ID"
+# routes = [ ]  # e.g., "example.com/*"
+
+[vars]
+USERNAME = "admin"
+PASS_ITER = 150000
+PASS_SALT_B64 = "OFJlvU9Xl3z0_jeBa7lZZA"
+PASS_DERIVED_B64 = "sZbjscuNb8d_7ljA6EoOprV3eCZH0wv-Fl1BeM8-Cfg"
+SESSION_SECRET = "6R6XOeZFlVbaChWd5pvoNVA8th2CK5KoXYjOiPER8b5Z5G_wedqKK3byDAc0IVYA"

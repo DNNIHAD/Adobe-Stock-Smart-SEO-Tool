@@ -13,3 +13,12 @@ PASS_ITER = 150000
 PASS_SALT_B64 = "OFJlvU9Xl3z0_jeBa7lZZA"
 PASS_DERIVED_B64 = "sZbjscuNb8d_7ljA6EoOprV3eCZH0wv-Fl1BeM8-Cfg"
 SESSION_SECRET = "6R6XOeZFlVbaChWd5pvoNVA8th2CK5KoXYjOiPER8b5Z5G_wedqKK3byDAc0IVYA"
+
+
+
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true
+
+
+

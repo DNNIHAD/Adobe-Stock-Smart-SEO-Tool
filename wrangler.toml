@@ -1,5 +1,6 @@
 # Cloudflare Workers config
-name = "smart-seo-auth"
+# wrangler.toml
+name = 'adobestocksmartseo'
 main = "src/worker.js"
 compatibility_date = "2025-08-01"
 
